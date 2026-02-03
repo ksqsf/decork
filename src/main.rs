@@ -41,7 +41,7 @@ fn main() -> anyhow::Result<()> {
         )
     } else {
         // No proxy.
-        return direct_main();
+        return direct_main(&opt.dest);
     };
     let auth = if let Some(auth) = opt.auth {
         Some(fs::read_to_string(auth)?)
@@ -57,8 +57,18 @@ fn main() -> anyhow::Result<()> {
     tunnel_main(&proxy, &opt.dest, auth.as_deref())
 }
 
-fn direct_main() -> anyhow::Result<()> {
-    immediate_copy(&mut io::stdin(), &mut io::stdout())?;
+fn direct_main(dest: &str) -> anyhow::Result<()> {
+    let stream = TcpStream::connect(dest)?;
+    let stream_in = stream.try_clone()?;
+    let stream_out = stream;
+    let to_stdout = std::thread::spawn(move || {
+        immediate_copy(stream_out, io::stdout()).ok();
+    });
+    let from_stdin = std::thread::spawn(move || {
+        immediate_copy(io::stdin(), stream_in).ok();
+    });
+    to_stdout.join().unwrap();
+    from_stdin.join().unwrap();
     Ok(())
 }
 
