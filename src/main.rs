@@ -6,10 +6,11 @@ use std::net::TcpStream;
 use std::path::PathBuf;
 use std::thread;
 
-use anyhow::bail;
 use base64::prelude::*;
 use structopt::StructOpt;
 use url::Url;
+
+type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 #[derive(StructOpt, Debug)]
 #[structopt(name = "decork")]
@@ -26,7 +27,7 @@ struct Opt {
     auth: Option<PathBuf>,
 }
 
-fn main() -> anyhow::Result<()> {
+fn main() -> Result<()> {
     let opt = Opt::from_args();
     let default = match std::env::var("http_proxy") {
         Ok(env) => Some(Url::parse(&env)?),
@@ -58,7 +59,7 @@ fn main() -> anyhow::Result<()> {
     tunnel_main(&proxy, &opt.dest, auth.as_deref())
 }
 
-fn direct_main(dest: &str) -> anyhow::Result<()> {
+fn direct_main(dest: &str) -> Result<()> {
     let stream = TcpStream::connect(dest)?;
     let stream_in = stream.try_clone()?;
     let stream_out = stream;
@@ -73,7 +74,7 @@ fn direct_main(dest: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn tunnel_main(proxy: &str, dest: &str, auth: Option<&str>) -> anyhow::Result<()> {
+fn tunnel_main(proxy: &str, dest: &str, auth: Option<&str>) -> Result<()> {
     let proxy = establish_proxy_tunnel(proxy, dest, auth)?;
     let proxy_in = proxy.try_clone()?;
     let proxy_out = proxy;
@@ -92,7 +93,7 @@ fn establish_proxy_tunnel(
     proxy: &str,
     dest: &str,
     auth: Option<&str>,
-) -> anyhow::Result<TcpStream> {
+) -> Result<TcpStream> {
     let mut stream = TcpStream::connect(proxy)?;
     let mut request = format!("CONNECT {} HTTP/1.0\r\n", dest);
     if let Some(auth) = auth {
@@ -106,7 +107,7 @@ fn establish_proxy_tunnel(
     let mut line = String::new();
     reader.read_line(&mut line)?;
     if !line.contains("200") {
-        bail!("Proxy failed: {}", line);
+        return Err(format!("Proxy failed: {}", line).into());
     }
     loop {
         line.clear();
