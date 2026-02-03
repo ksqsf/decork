@@ -2,7 +2,7 @@
 
 decork is a clone of corkscrew, a tool for tunneling ssh traffic over http proxies.  compared to the original corkscrew, it tries to be intelligent about =$http_proxy=. decork will happily parse =$http_proxy= and obtain there the proxy and the authentication details.  but you can still override it with =--proxy= and =--auth=.
 
-decork is handy if you are in a dynamic environment where the proxy is constantly changing, and/or =$http_proxy= is managed by something else.
+decork is handy if you are in a dynamic environment where the proxy is constantly changing, and/or =$http_proxy= is managed by something else.  for example, if no proxy is provided, decork will directly connect to the destination, as if there were no =ProxyCommand=.
 
 ** usage
 
@@ -17,6 +17,8 @@ update the =ProxyCommand= in your ssh config, like this:
 #+end_src
 
 note: =%h= is the destination host, and =%p= the destination port. in this case, =ssh.github.com= and =443=.
+
+now you can forget about it -- proxy is managed entirely with =$http_proxy=.
 
 ** installation
 
