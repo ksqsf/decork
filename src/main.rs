@@ -1,6 +1,7 @@
 use std::fs;
 use std::io;
-use std::io::{Read, Write};
+use std::io::BufReader;
+use std::io::{Read, Write, BufRead};
 use std::net::TcpStream;
 use std::path::PathBuf;
 use std::thread;
@@ -101,19 +102,23 @@ fn establish_proxy_tunnel(
     request.push_str("\r\n");
     stream.write_all(request.as_bytes())?;
     stream.flush()?;
-    let mut response = Vec::new();
-    let mut buf = [0u8; 1];
+    let mut reader = BufReader::new(stream);
+    let mut line = String::new();
+    reader.read_line(&mut line)?;
+    if !line.contains("200") {
+        bail!("Proxy failed: {}", line);
+    }
     loop {
-        stream.read_exact(&mut buf)?;
-        response.push(buf[0]);
-        if response.ends_with(b"\r\n\r\n") {
+        line.clear();
+        reader.read_line(&mut line)?;
+        if line == "\r\n" || line == "\n" {
             break;
         }
     }
-    let response_str = String::from_utf8_lossy(&response);
-    if !response_str.contains("200") {
-        bail!("Proxy failed: {}", response_str);
-    }
+    // handle data that are read but not consumed
+    io::stdout().write_all(reader.buffer())?;
+    io::stdout().flush()?;
+    let stream = reader.into_inner();
     Ok(stream)
 }
 
