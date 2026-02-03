@@ -1,0 +1,25 @@
+* decork
+
+decork is a clone of corkscrew, a tool for tunneling ssh traffic over http proxies..  compared to the original corkscrew, it tries to be intelligent about =$http_proxy=. decork will happily parse =$http_proxy= and obtain there the proxy and the authentication details.  but you can still override it with =--proxy= and =--auth=.
+
+** usage
+
+update the =ProxyCommand= in your ssh config, like this:
+
+#+begin_src conf
+  Host github.com
+       HostName ssh.github.com
+       Port 443
+       User git
+       ProxyCommand decork %h:%p --auth ~/.ssh/proxy_auth
+#+end_src
+
+note: =%h= is the destination host, and =%p= the destination port. in this case, =ssh.github.com= and =443=.
+
+** installation
+
+install the rust toolchain, clone this repo, and run
+
+#+begin_src bash
+  cargo install --path .
+#+end_src
