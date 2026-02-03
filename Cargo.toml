@@ -1,0 +1,10 @@
+[package]
+name = "decork"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.100"
+base64 = "0.22.1"
+structopt = "0.3.26"
+url = "2.5.8"
